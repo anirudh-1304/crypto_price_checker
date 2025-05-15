@@ -17,7 +17,7 @@ defmodule CryptoPriceChecker.BinanceClient do
   def subscribe_binance_stream(pairs) do
     payload = %{
       id: 1,
-      params: Enum.map(pairs, &(&1 <> "@ticker")),
+      params: Enum.map(pairs, fn crypto -> String.downcase(crypto) <> "@ticker" end),
       method: "SUBSCRIBE"
     }
 
@@ -25,8 +25,10 @@ defmodule CryptoPriceChecker.BinanceClient do
   end
 
   def handle_frame({:text, message}, state) do
+    Logger.info("Received frame: #{message}")
+
     case Jason.decode(message) do
-      {:ok, %{"data" => data}} ->
+      {:ok, data} ->
         process_ticker_update(data)
 
       {:error, _reason} ->
@@ -36,12 +38,12 @@ defmodule CryptoPriceChecker.BinanceClient do
     {:ok, state}
   end
 
-  def process_ticker_update(%{"s" => symbol, "c" => price}) do
+  defp process_ticker_update(%{"s" => symbol, "c" => price}) do
     :ets.insert(:crypto_price_table, {symbol, String.to_float(price)})
     Logger.info("Successfully Updated #{symbol} price to #{price}")
   end
 
-  def process_ticker_update(_), do: :ok
+  defp process_ticker_update(_), do: :ok
 
   def handle_info(:reconnect, state) do
     Logger.info("Reconnecting to WebSocket...")

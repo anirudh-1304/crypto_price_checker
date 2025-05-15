@@ -7,6 +7,9 @@ defmodule CryptoPriceCheckerWeb.Router do
 
   scope "/api", CryptoPriceCheckerWeb do
     pipe_through :api
+
+    get "/average_price", CryptoPriceController, :average_price
+    post "/subscribe_to_pairs", CryptoPriceController, :subscribe_to_pairs
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
